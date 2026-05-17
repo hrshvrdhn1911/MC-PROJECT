@@ -1,0 +1,473 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Jacobian Practice Portal - User Custom Mode</title>
+    <link rel="stylesheet" href="https://pyscript.net/releases/2024.1.1/core.css" />
+    <script type="module" src="https://pyscript.net/releases/2024.1.1/core.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <script>
+        window.MathJax = {
+            tex: {
+                inlineMath: [['$', '$'], ['\\(', '\\)']],
+                displayMath: [['$$', '$$'], ['\\[', '\\]']]
+            }
+        };
+    </script>
+    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <style>
+        .input-box { border: 2px solid #cbd5e1; border-radius: 12px; padding: 12px; width: 100%; outline: none; transition: 0.2s; font-weight: bold; background-color: #ffffff !important; color: #1e293b; }
+        .input-box:focus { border-color: #0ea5e9; box-shadow: 0 0 0 3px rgba(14, 165, 233, 0.1); background-color: #ffffff !important; }
+        .input-box:disabled { background-color: #f1f5f9 !important; color: #64748b; cursor: not-allowed; border-color: #e2e8f0; }
+        .math-display { background: #f8fafc; border: 2px dashed #e2e8f0; padding: 1.75rem; border-radius: 1.5rem; margin-bottom: 2rem; min-height: 80px; }
+        .solution-box { background: #fff7ed; border: 2px solid #fdba74; padding: 1rem; border-radius: 1rem; margin-top: 1rem; display: none; font-family: monospace; }
+        .section-label { font-size: 10px; font-weight: 900; color: #64748b; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.5rem; display: flex; justify-content: space-between; }
+        .mark-badge { background: #e0f2fe; color: #0369a1; padding: 2px 8px; border-radius: 999px; }
+        .score-card { background: #0f172a; color: white; padding: 2rem; border-radius: 2rem; margin-top: 2rem; display: none; }
+    </style>
+</head>
+<body class="bg-slate-50 min-h-screen pb-20">
+
+    <div class="max-w-4xl mx-auto pt-8 px-4">
+        <div class="bg-white p-6 rounded-[2rem] shadow-xl border-b-4 border-slate-900 mb-8 flex justify-between items-center relative">
+            <div>
+                <h1 class="text-2xl font-black italic uppercase text-slate-800 tracking-tighter">Jacobian Portal</h1>
+                <p class="text-[9px] font-bold text-amber-600 uppercase tracking-widest">Manual Book Entry - Sandbox Mode</p>
+            </div>
+            
+            <div class="flex gap-4 items-center pr-28">
+                <button py-click="hard_reset" class="text-red-500 font-bold uppercase text-[10px] border px-3 py-1 rounded-lg hover:bg-red-50">Clear Sandbox</button>
+                <div class="text-2xl font-black text-sky-600" id="live-score">0.0</div>
+            </div>
+
+            <div class="absolute top-4 right-5 flex items-center gap-2 bg-slate-100 p-1.5 rounded-xl border border-slate-200">
+                <button title="Syntax Guide" py-click="syntax_hint" class="w-3 h-3 rounded-full bg-amber-400 hover:bg-amber-500 transition-colors" aria-label="Hint"></button>
+                <button py-click="skip_question" class="bg-rose-500 hover:bg-rose-600 text-[9px] text-white font-black uppercase px-2.5 py-1 rounded-lg transition-colors shadow-sm">
+                    Reset Form
+                </button>
+            </div>
+        </div>
+
+        <div class="bg-white p-8 rounded-3xl shadow-lg mb-6 border border-slate-200">
+            <div class="section-label">Book Question Metadata Setup</div>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                <div>
+                    <label class="text-[10px] font-bold uppercase text-slate-400">Function Names (e.g. u, v, w)</label>
+                    <input type="text" id="book-fnames" class="input-box mt-1" placeholder="u, v">
+                </div>
+                <div>
+                    <label class="text-[10px] font-bold uppercase text-slate-400">Target Equations (Normal Book Format separated by ; or ,)</label>
+                    <input type="text" id="book-feqs" class="input-box mt-1" placeholder="x^2 - y^2; 2xy">
+                </div>
+            </div>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-8 pt-4 border-t border-slate-100">
+                <div>
+                    <div class="section-label">1. Dimension Parsing <span id="marks-setup" class="mark-badge">0.0 / 0.5</span></div>
+                    <input type="number" id="user-n" class="input-box mb-2 w-full" placeholder="Variable Count">
+                    <input type="text" id="user-vars" class="input-box mb-2 w-full" placeholder="Names (e.g. x, y)">
+                    <button py-click="verify_meta" id="meta-btn" class="w-full bg-slate-800 text-white font-bold py-2 rounded-xl text-xs uppercase mb-2">Initialize Calculations</button>
+                    <button py-click="syntax_hint" class="w-full bg-slate-100 text-slate-600 font-bold py-2 rounded-xl text-[10px] uppercase">Syntax Guide</button>
+                </div>
+                <div id="equation-entry-section" class="opacity-30 pointer-events-none">
+                    <div class="section-label">2. Verification Transcription</div>
+                    <div id="eq-inputs" class="flex flex-col gap-2 mb-3 text-sm"></div>
+                    <button py-click="verify_transcription" id="trans-btn" class="w-full bg-sky-600 text-white font-bold py-2 rounded-xl text-xs uppercase">Lock Parameters</button>
+                </div>
+            </div>
+        </div>
+
+        <div id="phase-1" class="bg-white p-8 rounded-3xl shadow-lg mb-6 hidden border-l-8 border-amber-400">
+            <div class="section-label">Partial Differentiation <span id="marks-p1" class="mark-badge">0.0 / 2.5</span></div>
+            <div id="derivatives-grid" class="flex flex-col gap-4"></div>
+            <div id="sol-s2" class="solution-box text-sm"></div>
+            <div class="flex gap-4 mt-6">
+                <button py-click="check_s2" id="btn-check-s2" class="flex-1 bg-emerald-600 text-white py-3 rounded-xl font-black uppercase text-sm">Verify Section</button>
+                <button py-click="reveal_s2" id="btn-reveal-s2" class="bg-amber-500 text-white px-4 rounded-xl font-black uppercase text-xs">Hint (0.0 Marks)</button>
+            </div>
+        </div>
+
+        <div id="phase-2" class="bg-white p-8 rounded-3xl shadow-lg mb-6 hidden border-l-8 border-indigo-500">
+            <div class="section-label">Matrix Assembly <span id="marks-p2" class="mark-badge">0.0 / 0.5</span></div>
+            <div class="flex justify-center items-center gap-4 bg-slate-50 p-6 rounded-2xl">
+                <span class="text-2xl font-serif italic text-slate-300">J =</span>
+                <div id="matrix-grid" class="grid gap-2"></div>
+            </div>
+            <div id="sol-s3" class="solution-box text-sm"></div>
+            <div class="flex gap-4 mt-6">
+                <button py-click="check_s3" id="btn-check-s3" class="flex-1 bg-indigo-600 text-white py-3 rounded-xl font-black uppercase text-sm">Verify Placement</button>
+                <button py-click="reveal_s3" id="btn-reveal-s3" class="bg-amber-500 text-white px-4 rounded-xl font-black uppercase text-xs">Hint (0.0 Marks)</button>
+            </div>
+        </div>
+
+        <div id="phase-3" class="bg-white p-8 rounded-3xl shadow-lg mb-6 hidden border-l-8 border-rose-500">
+            <div class="section-label">Jacobian Determinant <span id="marks-p3" class="mark-badge">0.0 / 1.5</span></div>
+            <div class="flex items-center gap-4 justify-center py-4">
+                <span class="text-3xl font-serif">|J| =</span>
+                <input type="text" id="user-det" class="input-box w-2/3 text-center text-xl" placeholder="Simplified Result">
+            </div>
+            <div id="sol-s4" class="solution-box text-sm"></div>
+            <div class="flex gap-4 mt-6">
+                <button py-click="check_s4" id="btn-check-s4" class="flex-1 bg-rose-600 text-white py-3 rounded-xl font-black uppercase text-sm">Final Submit</button>
+                <button py-click="reveal_s4" id="btn-reveal-s4" class="bg-amber-500 text-white px-4 rounded-xl font-black uppercase text-xs">Hint (0.0 Marks)</button>
+            </div>
+        </div>
+
+        <div id="final-scorecard" class="score-card">
+            <h2 class="text-3xl font-black uppercase italic mb-6 border-b border-slate-700 pb-2 text-sky-400">Final Results</h2>
+            <table class="w-full text-left mb-8">
+                <thead>
+                    <tr class="border-b border-slate-700 text-xs font-black text-slate-400 uppercase tracking-widest">
+                        <th class="pb-3">Section Description</th>
+                        <th class="pb-3">Out Of (Max)</th>
+                        <th class="pb-3">Obtained Score</th>
+                    </tr>
+                </thead>
+                <tbody class="text-lg font-bold">
+                    <tr class="border-b border-slate-800"><td class="py-4">Setup & Variables</td><td id="max-p0">0.5</td><td id="got-p0">0.0</td></tr>
+                    <tr class="border-b border-slate-800"><td class="py-4">Partial Differentials</td><td id="max-p1">2.5</td><td id="got-p1">0.0</td></tr>
+                    <tr class="border-b border-slate-800"><td class="py-4">Matrix Placement</td><td id="max-p2">0.5</td><td id="got-p2">0.0</td></tr>
+                    <tr class="border-b border-slate-800"><td class="py-4">Jacobian Determinant</td><td id="max-p3">1.5</td><td id="got-p3">0.0</td></tr>
+                </tbody>
+            </table>
+            <div id="final-total" class="text-5xl font-black text-white text-center mb-6">0.0 / 5.0</div>
+            
+            <div class="flex justify-center border-t border-slate-800 pt-6">
+                <button py-click="advance_next_question" class="bg-sky-500 hover:bg-sky-600 text-slate-950 font-black tracking-wide uppercase px-8 py-4 rounded-2xl text-sm transition-all shadow-lg transform hover:-translate-y-0.5">
+                    Clear Workspace & Next Question →
+                </button>
+            </div>
+        </div>
+    </div>
+
+<script type="py" config='{"packages":["sympy", "pyodide-http"]}'>
+import sympy as sp
+import re
+from js import document, MathJax, window, confirm
+
+state = {
+    "n": 0, "vars": [], "funcs": [], "ans_map": {}, 
+    "obt": {"p0":0.0, "p1":0.0, "p2":0.0, "p3":0.0},
+    "max": {"p0":0.5, "p1":2.5, "p2":0.5, "p3":1.5},
+    "mistakes": {"p1": 0, "p2": 0, "p3": 0},
+    "hint_flags": {"p1": False, "p2": False, "p3": False},
+    "g_max": 5.0,
+    "custom_names": [],
+    "custom_equations": []
+}
+
+MATH_LOCALS = {
+    "asin": sp.asin, "acos": sp.acos, "atan": sp.atan,
+    "arcsin": sp.asin, "arccos": sp.acos, "arctan": sp.atan,
+    "sin": sp.sin, "cos": sp.cos, "tan": sp.tan,
+    "sqrt": sp.sqrt, "log": sp.log, "ln": sp.log, "exp": sp.exp
+}
+
+def smart_parse(t, vs):
+    t = str(t).replace(" ", "").replace("^", "**")
+    t = t.replace("tan^-1", "atan").replace("sin^-1", "asin").replace("cos^-1", "acos")
+    t = re.sub(r'(\d)([a-zA-Z\(])', r'\1*\2', t)
+    for v in vs: t = re.sub(f'({v})([a-zA-Z\(])', r'\1*\2', t)
+    return t
+
+def reset_problem_state():
+    state["n"] = 0
+    state["vars"] = []
+    state["funcs"] = []
+    state["ans_map"] = {}
+    state["obt"] = {"p0":0.0, "p1":0.0, "p2":0.0, "p3":0.0}
+    state["max"] = {"p0":0.5, "p1":2.5, "p2":0.5, "p3":1.5}
+    state["mistakes"] = {"p1": 0, "p2": 0, "p3": 0}
+    state["hint_flags"] = {"p1": False, "p2": False, "p3": False}
+    state["g_max"] = 5.0
+    state["custom_names"] = []
+    state["custom_equations"] = []
+
+    document.getElementById("book-fnames").value = ""
+    document.getElementById("book-fnames").disabled = False
+    document.getElementById("book-feqs").value = ""
+    document.getElementById("book-feqs").disabled = False
+
+    document.getElementById("user-n").value = ""
+    document.getElementById("user-n").disabled = False
+    document.getElementById("user-vars").value = ""
+    document.getElementById("user-vars").disabled = False
+    document.getElementById("meta-btn").disabled = False
+    
+    document.getElementById("eq-inputs").innerHTML = ""
+    document.getElementById("equation-entry-section").classList.add("opacity-30", "pointer-events-none")
+    document.getElementById("trans-btn").disabled = False
+
+    for phase_id in ["phase-1", "phase-2", "phase-3", "final-scorecard"]:
+        document.getElementById(phase_id).classList.add("hidden")
+    document.getElementById("final-scorecard").style.display = "none"
+
+    document.getElementById("derivatives-grid").innerHTML = ""
+    document.getElementById("sol-s2").innerHTML = ""
+    document.getElementById("sol-s2").style.display = "none"
+    document.getElementById("btn-check-s2").disabled = False
+    document.getElementById("btn-reveal-s2").disabled = False
+
+    document.getElementById("matrix-grid").innerHTML = ""
+    document.getElementById("sol-s3").innerHTML = ""
+    document.getElementById("sol-s3").style.display = "none"
+    document.getElementById("btn-check-s3").disabled = False
+    document.getElementById("btn-reveal-s3").disabled = False
+
+    document.getElementById("user-det").value = ""
+    document.getElementById("user-det").disabled = False
+    document.getElementById("sol-s4").innerHTML = ""
+    document.getElementById("sol-s4").style.display = "none"
+    document.getElementById("btn-check-s4").disabled = False
+    document.getElementById("btn-reveal-s4").disabled = False
+    
+    update_ui()
+
+def hard_reset(e): 
+    if confirm("Wipe whole practice canvas?"):
+        reset_problem_state()
+
+def skip_question(e):
+    reset_problem_state()
+
+def advance_next_question(e):
+    reset_problem_state()
+
+def syntax_hint(e):
+    window.alert("Inverses: atan(x) or tan^-1(x) | Square Root: sqrt(x) | Powers: x^2 | Implicit: 2xy")
+
+def verify_meta(e):
+    raw_names = document.getElementById("book-fnames").value
+    raw_eqs = document.getElementById("book-feqs").value
+    un = document.getElementById("user-n").value
+    uv = document.getElementById("user-vars").value
+
+    if not raw_names or not raw_eqs or not un or not uv:
+        window.alert("Setup Error: All textbook fields are mandatory.")
+        return
+
+    names_list = [n.strip() for n in raw_names.replace(",", " ").split() if n.strip()]
+    
+    # FIXED: Re-split using a regex to accept both commas and semicolons dynamically
+    eqs_list = [eq.strip() for eq in re.split('[;,]', raw_eqs) if eq.strip()]
+    uvs = [v.strip() for v in uv.replace(","," ").split() if v.strip()]
+
+    if len(names_list) != int(un) or len(eqs_list) != int(un) or len(uvs) != int(un):
+        window.alert("Dimension Mismatch: Function count, equation blocks, and variables must equal variable count.")
+        return
+
+    state["n"] = int(un)
+    state["custom_names"] = names_list
+    
+    if state["n"] == 3:
+        state["max"]["p1"] = 4.5
+        state["g_max"] = 7.0
+    else:
+        state["max"]["p1"] = 2.5
+        state["g_max"] = 5.0
+        
+    document.getElementById("marks-p1").innerText = f"0.0 / {state['max']['p1']}"
+    
+    local_vd = {n: sp.Symbol(n) for n in uvs}
+    MATH_LOCALS.update(local_vd)
+    
+    state["vars"] = sp.symbols(" ".join(uvs))
+    if not isinstance(state["vars"], tuple): state["vars"] = (state["vars"],)
+    
+    try:
+        processed_eqs = []
+        for eq in eqs_list:
+            cleaned_eq = smart_parse(eq, uvs)
+            processed_eqs.append(cleaned_eq)
+        state["custom_equations"] = processed_eqs
+    except Exception as err:
+        window.alert("Error parsing equations setup formatting layout.")
+        return
+
+    html = "".join([f'<input type="text" id="eq_{i}" class="input-box mb-2" placeholder="{state["custom_names"][i]} = ...">' for i in range(state["n"])])
+    document.getElementById("eq-inputs").innerHTML = html
+    document.getElementById("equation-entry-section").classList.remove("opacity-30", "pointer-events-none")
+    
+    document.getElementById("book-fnames").disabled = True
+    document.getElementById("book-feqs").disabled = True
+    document.getElementById("meta-btn").disabled = True
+    document.getElementById("user-n").disabled = True
+    document.getElementById("user-vars").disabled = True
+    update_ui()
+
+def verify_transcription(e):
+    vns = [str(v) for v in state["vars"]]
+    try:
+        for i in range(state["n"]):
+            ui = document.getElementById(f"eq_{i}").value
+            if "=" not in ui: return
+            rhs = smart_parse(ui.split("=")[1].strip(), vns)
+            
+            parsed_user = sp.sympify(rhs, locals=MATH_LOCALS)
+            parsed_sandbox = sp.sympify(state["custom_equations"][i], locals=MATH_LOCALS)
+            
+            if sp.simplify(parsed_user - parsed_sandbox) != 0:
+                window.alert("Transcription Mismatch relative to sandbox configuration.")
+                return
+                
+        state["funcs"] = [sp.sympify(f, locals=MATH_LOCALS) for f in state["custom_equations"]]
+        state["obt"]["p0"] = 0.5
+        build_p1_ui()
+        for i in range(state["n"]): document.getElementById(f"eq_{i}").disabled = True
+        
+        document.getElementById("trans-btn").disabled = True
+        document.getElementById("phase-1").classList.remove("hidden")
+        update_ui()
+    except Exception as err:
+        window.alert("Math Format Error in inputs.")
+
+def build_p1_ui():
+    grid, html = document.getElementById("derivatives-grid"), ""
+    for i in range(state["n"]):
+        for j in range(state["n"]):
+            v_name = str(state["vars"][j])
+            state["ans_map"][f"{i}_{j}"] = sp.diff(state["funcs"][i], state["vars"][j])
+            html += f'<div class="flex items-center gap-4"><label class="w-32 text-[10px] font-black italic">∂{state["custom_names"][i]}/∂{v_name}</label><input type="text" id="ans_{i}_{j}" class="input-box flex-1 h-10"></div>'
+    grid.innerHTML = html
+
+def check_s2(e):
+    ok, vns = True, [str(v) for v in state["vars"]]
+    for i in range(state["n"]):
+        for j in range(state["n"]):
+            val = document.getElementById(f"ans_{i}_{j}").value
+            try:
+                user_ans = sp.sympify(smart_parse(val, vns), locals=MATH_LOCALS)
+                if sp.simplify(user_ans - state["ans_map"][f"{i}_{j}"]) != 0: ok = False
+            except: ok = False
+            
+    if ok:
+        if state["hint_flags"]["p1"]:
+            state["obt"]["p1"] = 0.0
+        elif state["mistakes"]["p1"] > 0:
+            state["obt"]["p1"] = state["max"]["p1"] / 2.0
+        else:
+            state["obt"]["p1"] = state["max"]["p1"]
+            
+        for i in range(state["n"]):
+            for j in range(state["n"]): document.getElementById(f"ans_{i}_{j}").disabled = True
+        document.getElementById("btn-check-s2").disabled = True
+        document.getElementById("btn-reveal-s2").disabled = True
+        build_p2_ui()
+        document.getElementById("phase-2").classList.remove("hidden")
+        update_ui()
+    else: 
+        state["mistakes"]["p1"] += 1
+        window.alert("Calculations mismatch. Half marks deduction penalty applied.")
+
+def reveal_s2(e):
+    state["hint_flags"]["p1"] = True
+    state["obt"]["p1"] = 0.0
+    hint_text = "<b>Partial Differentiation Results:</b><br>"
+    for i in range(state["n"]):
+        for j in range(state["n"]):
+            ans_val = str(state["ans_map"][f"{i}_{j}"]).replace('**','^')
+            hint_text += f"∂{state['custom_names'][i]}/∂{state['vars'][j]} = {ans_val}<br>"
+    document.getElementById("sol-s2").innerHTML = hint_text + "<br><span class='text-red-500 font-bold'>Section Score Locked: 0.0</span>"
+    document.getElementById("sol-s2").style.display = "block"
+    update_ui()
+
+def build_p2_ui():
+    grid = document.getElementById("matrix-grid")
+    grid.style.gridTemplateColumns = f"repeat({state['n']}, 1fr)"
+    grid.innerHTML = "".join([f'<input type="text" id="m_{i}" class="input-box w-16 h-16 text-center">' for i in range(state["n"]**2)])
+
+def check_s3(e):
+    ok, idx, vns = True, 0, [str(v) for v in state["vars"]]
+    for i in range(state["n"]):
+        for j in range(state["n"]):
+            try:
+                user_val = sp.sympify(smart_parse(document.getElementById(f"m_{idx}").value, vns), locals=MATH_LOCALS)
+                if sp.simplify(user_val - state["ans_map"][f"{i}_{j}"]) != 0: ok = False
+            except: ok = False
+            idx += 1
+            
+    if ok:
+        if state["hint_flags"]["p2"]:
+            state["obt"]["p2"] = 0.0
+        elif state["mistakes"]["p2"] > 0:
+            state["obt"]["p2"] = state["max"]["p2"] / 2.0
+        else:
+            state["obt"]["p2"] = state["max"]["p2"]
+            
+        for i in range(state["n"]**2): document.getElementById(f"m_{i}").disabled = True
+        document.getElementById("btn-check-s3").disabled = True
+        document.getElementById("btn-reveal-s3").disabled = True
+        document.getElementById("phase-3").classList.remove("hidden")
+        update_ui()
+    else: 
+        state["mistakes"]["p2"] += 1
+        window.alert("Matrix placement is incorrect. Half marks deduction penalty applied.")
+
+def reveal_s3(e):
+    state["hint_flags"]["p2"] = True
+    state["obt"]["p2"] = 0.0
+    document.getElementById("sol-s3").innerHTML = "<b>Logic:</b> Arrange derivatives by row: f1, then f2.<br><span class='text-red-500 font-bold'>Section Score Locked: 0.0</span>"
+    document.getElementById("sol-s3").style.display = "block"
+    update_ui()
+
+def check_s4(e):
+    v, vns = document.getElementById("user-det").value, [str(v) for v in state["vars"]]
+    m = sp.Matrix(state["n"], state["n"], [state["ans_map"][f"{i}_{j}"] for i in range(state["n"]) for j in range(state["n"])])
+    try:
+        user_det = sp.sympify(smart_parse(v, vns), locals=MATH_LOCALS)
+        actual_det = sp.simplify(m.det())
+        
+        if sp.simplify(user_det - actual_det) == 0:
+            if state["hint_flags"]["p3"]:
+                state["obt"]["p3"] = 0.0
+            elif state["mistakes"]["p3"] > 0:
+                state["obt"]["p3"] = state["max"]["p3"] / 2.0
+            else:
+                state["obt"]["p3"] = state["max"]["p3"]
+                
+            document.getElementById("user-det").disabled = True
+            document.getElementById("btn-check-s4").disabled = True
+            document.getElementById("btn-reveal-s4").disabled = True
+            finish()
+        else:
+            state["mistakes"]["p3"] += 1
+            window.alert("Final determinant calculation mismatch. Penalty applied.")
+    except: 
+        state["mistakes"]["p3"] += 1
+        window.alert("Input evaluation error. Penalty applied.")
+
+def reveal_s4(e):
+    state["hint_flags"]["p3"] = True
+    state["obt"]["p3"] = 0.0
+    m = sp.Matrix(state["n"], state["n"], [state["ans_map"][f"{i}_{j}"] for i in range(state["n"]) for j in range(state["n"])])
+    res = str(sp.simplify(m.det())).replace('**','^')
+    document.getElementById("sol-s4").innerHTML = f"<b>Determinant Result:</b> {res}<br><span class='text-red-500 font-bold'>Section Score Locked: 0.0</span>"
+    document.getElementById("sol-s4").style.display = "block"
+    update_ui()
+
+def update_ui():
+    tot = sum(state["obt"].values())
+    document.getElementById("live-score").innerText = str(round(tot, 2))
+    document.getElementById("marks-setup").innerText = f"{state['obt']['p0']} / {state['max']['p0']}"
+    document.getElementById("marks-p1").innerText = f"{state['obt']['p1']} / {state['max']['p1']}"
+    document.getElementById("marks-p2").innerText = f"{state['obt']['p2']} / {state['max']['p2']}"
+    document.getElementById("marks-p3").innerText = f"{state['obt']['p3']} / {state['max']['p3']}"
+
+def finish():
+    update_ui()
+    document.getElementById("max-p1").innerText = str(state["max"]["p1"])
+    
+    document.getElementById("got-p0").innerText = str(state["obt"]["p0"])
+    document.getElementById("got-p1").innerText = str(state["obt"]["p1"])
+    document.getElementById("got-p2").innerText = str(state["obt"]["p2"])
+    document.getElementById("got-p3").innerText = str(state["obt"]["p3"])
+    
+    document.getElementById("final-total").innerText = f"{round(sum(state['obt'].values()), 2)} / {state['g_max']}"
+    document.getElementById("final-scorecard").style.display = "block"
+    document.getElementById("final-scorecard").classList.remove("hidden")
+
+update_ui()
+</script>
+</body>
+</html>

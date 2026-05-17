@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Jacobian Academy | Assessment Portal</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        .glass-card {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(226, 232, 240, 0.8);
+        }
+        .btn-hover {
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .btn-hover:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+        }
+    </style>
+</head>
+<body class="bg-slate-50 min-h-screen flex items-center justify-center font-sans text-slate-900">
+
+    <div class="max-w-4xl w-full px-6">
+        <!-- Header -->
+        <div class="text-center mb-12">
+            <h1 class="text-5xl font-black italic uppercase text-slate-800 tracking-tighter mb-2">
+                Jacobian Academy
+            </h1>
+            <div class="h-1.5 w-32 bg-sky-500 mx-auto rounded-full mb-4"></div>
+            <p class="text-slate-500 font-bold uppercase tracking-[0.2em] text-sm italic">
+                Advanced Engineering Assessment Portal
+            </p>
+        </div>
+
+        <!-- Selection Grid -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+            
+            <!-- Option 1: Create Own Test -->
+            <div class="glass-card p-10 rounded-[2.5rem] flex flex-col items-center text-center btn-hover border-b-8 border-sky-500">
+                <div class="w-16 h-16 bg-sky-100 text-sky-600 rounded-2xl flex items-center justify-center mb-6">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                    </svg>
+                </div>
+                <h2 class="text-2xl font-black uppercase italic mb-3">Custom Lab</h2>
+                <p class="text-slate-500 text-sm mb-8 leading-relaxed">
+                    Input your own partial differential equations and variables. Perfect for verifying homework or complex research problems.
+                </p>
+                <a href="codeone.html" class="w-full bg-slate-900 text-white font-black py-4 rounded-2xl uppercase tracking-widest hover:bg-sky-600 transition-colors">
+                    Create Your Own Test
+                </a>
+            </div>
+
+            <!-- Option 2: QB Mock Test -->
+            <div class="glass-card p-10 rounded-[2.5rem] flex flex-col items-center text-center btn-hover border-b-8 border-indigo-500">
+                <div class="w-16 h-16 bg-indigo-100 text-indigo-600 rounded-2xl flex items-center justify-center mb-6">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                </div>
+                <h2 class="text-2xl font-black uppercase italic mb-3">Mock Exam</h2>
+                <p class="text-slate-500 text-sm mb-8 leading-relaxed">
+                    Randomized problems pulled from the Question Bank. Syncs with Proctored Cloud for verified scoring and certification.
+                </p>
+                <a href="codetwo.html" class="w-full bg-indigo-600 text-white font-black py-4 rounded-2xl uppercase tracking-widest hover:bg-slate-900 transition-colors">
+                    QB Mock Test
+                </a>
+            </div>
+
+        </div>
+
+        <!-- Footer Info -->
+        <div class="mt-12 text-center">
+            <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest">
+                System Status: Online | Logic V7.5 Proctored
+            </p>
+        </div>
+    </div>
+
+</body>
+</html>
